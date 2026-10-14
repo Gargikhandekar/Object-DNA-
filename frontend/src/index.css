@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+body { @apply bg-graphite-950 text-slate-200 antialiased font-sans; }
+::selection { background: rgba(34, 211, 238, 0.3); }
+
+@layer components {
+  .card { @apply rounded-xl border border-graphite-700 bg-graphite-900/80 shadow-sm; }
+  .card-pad { @apply p-5; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition
+         focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-accent text-graphite-950 hover:bg-cyan-300; }
+  .btn-secondary { @apply btn border border-graphite-600 bg-graphite-800 text-slate-200 hover:bg-graphite-700; }
+  .btn-danger { @apply btn bg-rose-500/90 text-white hover:bg-rose-500; }
+  .btn-ghost { @apply btn text-slate-300 hover:bg-graphite-800; }
+  .input { @apply w-full rounded-lg border border-graphite-600 bg-graphite-850 px-3 py-2 text-sm text-slate-100
+           placeholder:text-graphite-500 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/60; }
+  .label { @apply mb-1 block text-xs font-medium uppercase tracking-wider text-slate-400; }
+  .mono { @apply font-mono; }
+  .h-page { @apply text-2xl font-semibold tracking-tight text-slate-50; }
+  .sub { @apply text-sm text-slate-400; }
+}
+
+@keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+.scanline::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, rgba(34,211,238,.18), transparent); animation: scan 1.6s linear infinite; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .scanline::after { animation: none; } }

@@ -1,0 +1,26 @@
+# Object DNA backend — Python 3.11+ (tested on 3.11 and 3.13).
+# Exact versions used for the reported test run are listed in README.md.
+
+# Computer vision / ML
+numpy>=1.26,<3
+opencv-python-headless>=4.9,<6
+pillow>=10.2
+scikit-learn>=1.4
+pandas>=2.1
+matplotlib>=3.8
+# CPU build is sufficient. On Windows/Linux without CUDA you can use the smaller CPU wheels:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+torch>=2.2
+torchvision>=0.17
+
+# API
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
+pydantic>=2.6
+pydantic-settings>=2.2
+sqlalchemy>=2.0.25
+
+# Tests
+pytest>=8.0
+httpx>=0.27

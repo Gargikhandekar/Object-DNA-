@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Runtime data (never commit user images, fingerprints, weights or databases)
+data/*.db
+data/*.db-*
+data/storage/
+data/models/*
+!data/models/.gitkeep
+data/datasets/*
+!data/datasets/.gitkeep
+data/objects/*
+!data/objects/.gitkeep
+
+# Experiment outputs and caches
+experiments/cache/
+experiments/results/*
+!experiments/results/.gitkeep
+experiments/configs/active_fusion.json
+
+# Env / OS / IDE
+.env
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
