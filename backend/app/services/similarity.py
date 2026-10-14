@@ -94,9 +94,9 @@ def pair_evidence(q: FeatureSet, r: FeatureSet, *, ratio: float = 0.75, reproj: 
 # Fusion configuration
 # ---------------------------------------------------------------------------
 
-DEFAULT_WEIGHTS = {"deep": 0.35, "geometric": 0.45, "texture": 0.1, "color": 0.1, "shape": 0.0}
+DEFAULT_WEIGHTS = {"deep": 0.40, "geometric": 0.50, "texture": 0.05, "color": 0.05, "shape": 0.0}
 DEFAULT_RANGES = {
-    "deep": (0.5, 0.95),
+    "deep": (0.25, 0.90),
     "geometric": (8.0, 50.0),
     "texture": (0.80, 0.98),
     "color": (0.40, 0.90),

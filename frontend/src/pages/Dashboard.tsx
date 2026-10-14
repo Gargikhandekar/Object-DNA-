@@ -13,6 +13,7 @@ export default function Dashboard() {
   const { data, error, loading, reload } = useApi(api.dashboard, [], { pollMs: 20000 });
   const toast = useToast();
   const [backfilling, setBackfilling] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   if (loading && !data) return <Spinner label="Loading dashboard…" />;
   if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
@@ -24,6 +25,19 @@ export default function Dashboard() {
     { name: "No reliable match", value: u.rejected, color: "#fb7185" },
   ];
   const latest = data.experiments[0];
+
+  const resetFusion = async () => {
+    setResetting(true);
+    try {
+      const f = await api.resetFusion();
+      toast("success", `Using ${f.source} fusion again (accept ≥ ${f.accept_threshold}).`);
+      reload();
+    } catch (e) {
+      toast("error", (e as Error).message);
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const backfill = async () => {
     setBackfilling(true);
@@ -109,6 +123,11 @@ export default function Dashboard() {
               <div className="mb-1 text-slate-400">Fusion: <span className="text-slate-200">{data.fusion.source}</span></div>
               <div className="font-mono text-slate-400">accept ≥ {data.fusion.accept_threshold.toFixed(3)} · uncertain ≥ {data.fusion.uncertain_threshold.toFixed(3)} · margin ≥ {data.fusion.margin_threshold.toFixed(3)}</div>
               <div className="mt-1 font-mono text-slate-500">{Object.entries(data.fusion.weights).filter(([, w]) => w > 0).map(([k, w]) => `${k} ${w.toFixed(2)}`).join(" · ")}</div>
+              {data.fusion.source !== "default-heuristic" && (
+                <button className="btn-ghost mt-2 px-2 py-1 text-xs" onClick={resetFusion} disabled={resetting}>
+                  {resetting ? "Resetting…" : "Reset to default fusion"}
+                </button>
+              )}
             </div>
           </dl>
         </Section>

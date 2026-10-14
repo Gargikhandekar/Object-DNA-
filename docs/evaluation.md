@@ -143,6 +143,35 @@ the walk-around fall below the threshold. In the app with **default** thresholds
 viewpoint change ranked first but scored only 0.28 (NO RELIABLE MATCH). Applying the validation-tuned
 fusion fixes such cases on this data.
 
+#### Same Objectron subset with ResNet-50 embeddings (run on a user machine)
+
+Run `20261014-184931-fcba36` was produced by the project author's local install with ResNet-50 weights, on the
+same 16-object subset and split. These are the values read from the Research Lab:
+
+| Method | Top-1 | Top-5 | Acc. precision | Acc. recall | Unknown rejection | Open-set acc. | Ver. AUC | EER | FMR | FNMR |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ORB + RANSAC | 1.000 | 1.000 | 0.982 | 1.000 | 0.958 | 0.988 | 0.871 | 0.129 | 0.000 | 0.258 |
+| LBP texture | 0.607 | 0.911 | 0.436 | 0.607 | 0.083 | 0.450 | 0.746 | 0.302 | 0.467 | 0.236 |
+| HSV colour | 0.929 | 0.946 | 0.729 | 0.911 | 0.375 | 0.750 | 0.916 | 0.179 | 0.220 | 0.181 |
+| **Deep embedding (ResNet-50)** | 1.000 | 1.000 | 0.718 | 1.000 | **0.083** | 0.725 | **1.000** | 0.000 | 0.225 | 0.000 |
+| **Hybrid (default)** | 1.000 | 1.000 | 1.000 | 1.000 | **1.000** | 1.000 | **1.000** | 0.008 | 0.011 | 0.000 |
+| Hybrid (validation-tuned: deep 0.4, geometric 0.6) | 1.000 | — | — | — | 0.708 (17/24) | — | 0.999 (val) | — | — | — |
+
+* **Deep embeddings rank perfectly but cannot reject unknowns alone.** Verification AUC is 1.000, but only
+  8 % of unregistered-object queries are rejected. Generic ImageNet features make every real photo look
+  somewhat similar, so a single threshold cannot separate a *different* bottle from a registered one.
+* **The hybrid works best on this subset.** Deep similarity finds the right candidate, and RANSAC-verified
+  local matches confirm it is the same physical object, giving 100 % accuracy and 100 % unknown rejection on
+  the test split.
+* **Validation tuning overfit the tiny validation split.** With only 7 validation identities, the tuned
+  thresholds were more permissive. In its open-set confusion matrix, 7 of 24 unknown queries were accepted:
+  5 as a registered *bottle*, 1 as the book and 1 as a cup. The unknown objects are a bottle and a cup, so most
+  errors are *same-category, different-instance* confusions, the central difficulty of this project.
+* The measured ResNet-50 cosine range (5th percentile of different-instance pairs 0.086, 95th percentile of
+  same-instance pairs 0.942) was used to set the default deep range to 0.25–0.90. The previous guess of
+  0.5–0.95 discarded much real deep evidence.
+* Caveats: 9 test identities and 80 test queries, one video per object.
+
 ### COIL-100 (real objects, viewpoint changes)
 
 `python scripts/download_coil100.py` converts COIL-100 into the manifest format: 4 reference views per

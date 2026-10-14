@@ -76,8 +76,9 @@ the score exactly, which makes the evidence breakdown in the UI additive and aud
 
 Two configurations exist:
 
-* **default-heuristic**: hand-set weights (deep 0.35, geometric 0.45, texture 0.10, colour 0.10, shape 0) and
-  ranges (geometric 8–50 inliers, chosen from real photographs where verified matches give tens of inliers).
+* **default-heuristic**: weights deep 0.40, geometric 0.50, texture 0.05, colour 0.05, shape 0; ranges
+  geometric 8–50 inliers (real photographs give tens of inliers) and deep cosine 0.25–0.90 (informed by a
+  validation fit on the Objectron subset with ResNet-50: lo 0.086, hi 0.942, fitted weights deep 0.4 / geometric 0.6).
   It is documented as untuned; see `experiments/configs/default_fusion.json`.
 * **validation-tuned**: produced by the Research Lab. `lo_i` is the 5th percentile of *different-instance*
   validation pairs and `hi_i` the 95th percentile of *same-instance* validation pairs; the weights are a
