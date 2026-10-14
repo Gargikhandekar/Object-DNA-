@@ -29,7 +29,7 @@ def test_register_object_and_fingerprints_persisted(client, img_bytes, settings)
     extractors = {fp["extractor"] for fp in obj["images"][0]["fingerprints"]}
     assert {"orb", "lbp", "color", "gradient"} <= extractors
     fp = obj["images"][0]["fingerprints"][0]
-    assert fp["feature_version"] and fp["preprocessing"]["version"] == "prep-v1"
+    assert fp["feature_version"] and fp["preprocessing"]["version"] == "prep-v2"
     # Artifacts exist on disk.
     storage = settings.resolved_storage_dir / "objects" / obj["public_id"]
     assert list(storage.rglob("orb.npz")) and list(storage.rglob("global.npz"))

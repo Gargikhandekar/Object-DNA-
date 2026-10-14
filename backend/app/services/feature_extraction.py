@@ -104,7 +104,7 @@ def extract_features(
     config = config or FeatureConfig()
     mask = prep.feature_mask
     t = time.perf_counter()
-    orb = extract_orb(prep.gray, mask, config.orb_nfeatures)
+    orb = extract_orb(prep.gray, prep.keypoint_mask, config.orb_nfeatures)
     t_orb = time.perf_counter()
     lbp = tf.lbp_histogram(prep.gray, mask)
     grad = tf.gradient_features(prep.gray, mask)

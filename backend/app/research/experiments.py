@@ -163,7 +163,8 @@ def timed_evidence(q: FeatureSet, r: FeatureSet, ratio: float = 0.75, reproj: fl
     t1 = time.thread_time()
     texture = tf.lbp_similarity(q.lbp, r.lbp)
     t2 = time.thread_time()
-    color = tf.bhattacharyya_similarity(q.color, r.color)
+    color = None if (tf.is_achromatic(q.color) or tf.is_achromatic(r.color)) else \
+        tf.bhattacharyya_similarity(q.color, r.color)
     t3 = time.thread_time()
     shape = tf.shape_similarity(q.shape, r.shape)
     t4 = time.thread_time()

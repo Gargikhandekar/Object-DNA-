@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Activity, Boxes, CheckCircle2, CircleHelp, Clock, Cpu, FlaskConical, Images, ScanSearch, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -11,6 +12,7 @@ const tooltipStyle = { background: "#161a1f", border: "1px solid #384250", borde
 export default function Dashboard() {
   const { data, error, loading, reload } = useApi(api.dashboard, [], { pollMs: 20000 });
   const toast = useToast();
+  const [backfilling, setBackfilling] = useState(false);
 
   if (loading && !data) return <Spinner label="Loading dashboard…" />;
   if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
@@ -24,11 +26,15 @@ export default function Dashboard() {
   const latest = data.experiments[0];
 
   const backfill = async () => {
+    setBackfilling(true);
+    toast("info", "Computing deep embeddings for existing reference images. This can take a minute or two…");
     try {
       const r = await api.backfillEmbeddings();
       toast("success", `Computed ${r.computed} missing embeddings.`);
     } catch (e) {
       toast("error", (e as Error).message);
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -92,7 +98,7 @@ export default function Dashboard() {
               <div>
                 <dt className="text-slate-300">Deep embedding: {data.model_status.backbone}</dt>
                 <dd className="text-xs text-slate-500">{data.model_status.available ? `${data.model_status.description ?? ""} ${data.model_status.loaded ? "· loaded" : "· lazy-loaded on first use"}` : data.model_status.message}</dd>
-                {data.model_status.available && <button className="btn-ghost mt-1 px-2 py-1 text-xs" onClick={backfill}>Backfill missing embeddings</button>}
+                {data.model_status.available && <button className="btn-secondary mt-2 px-3 py-1.5 text-xs" onClick={backfill} disabled={backfilling}>{backfilling ? <Spinner label="Backfilling embeddings…" /> : "Backfill missing embeddings"}</button>}
               </div>
             </div>
             <div className="flex items-start gap-2">

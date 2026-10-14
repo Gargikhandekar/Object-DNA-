@@ -44,3 +44,25 @@ def test_cosine_helpers():
     assert np.isclose(np.linalg.norm(l2_normalize(a)), 1.0)
     assert np.isclose(cosine_similarity(a, a), 1.0)
     assert np.isclose(cosine_similarity(a, b), 24 / 25)
+
+
+def test_backfill_adds_embeddings_to_existing_references(settings, img_bytes):
+    """Objects registered before weights were installed get embeddings via backfill."""
+    from fastapi.testclient import TestClient
+
+    from app.core.runtime import build_runtime, set_runtime
+    from app.main import create_app
+    from tests.conftest import register
+
+    with TestClient(create_app()) as c:
+        assert register(c, "Bottle", [("a.jpg", img_bytes(1)), ("b.jpg", img_bytes(1, "lighting"))]).status_code == 201
+        assert c.post("/api/settings/backfill-embeddings").status_code == 409  # no encoder yet
+
+        embedder = EmbeddingExtractor("resnet50", settings.resolved_weights_dir, allow_random_init=True)
+        set_runtime(build_runtime(settings, embedder))
+        r = c.post("/api/settings/backfill-embeddings")
+        assert r.status_code == 200 and r.json()["computed"] == 2
+        assert c.post("/api/settings/backfill-embeddings").json()["computed"] == 0  # idempotent
+
+        res = c.post("/api/identify", files={"file": ("q.jpg", img_bytes(1, "viewpoint_moderate"), "image/jpeg")}).json()
+        assert res["candidates"][0]["evidence"]["raw"]["deep"] is not None

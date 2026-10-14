@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 import cv2
 import numpy as np
 
-PREPROCESSING_VERSION = "prep-v1"
+PREPROCESSING_VERSION = "prep-v2"
 
 
 @dataclass
@@ -56,6 +56,19 @@ class PreprocessedImage:
     @property
     def feature_mask(self) -> np.ndarray | None:
         return self.mask if self.mask_reliable else None
+
+    @property
+    def keypoint_mask(self) -> np.ndarray | None:
+        """Foreground mask widened by ~25 % of the image size.
+
+        GrabCut often trims parts of objects that fill the frame; the widened mask keeps their keypoints
+        while still excluding distant background clutter.
+        """
+        m = self.feature_mask
+        if m is None:
+            return None
+        k = max(1, int(0.25 * max(m.shape)))
+        return cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1, 2 * k + 1)))
 
 
 def resize_max_side(rgb: np.ndarray, max_side: int) -> tuple[np.ndarray, float]:
@@ -99,6 +112,12 @@ def foreground_mask(rgb: np.ndarray, work_side: int = 256, iterations: int = 3) 
         frac = areas.max() / float(sh * sw)
         dominance = areas.max() / max(total_fg, 1.0)
         reliable = 0.05 <= frac <= 0.92 and dominance >= 0.7
+        # If the segment runs into the initialisation rectangle on two or more sides, the object
+        # most likely fills the frame and GrabCut has cut part of it away: do not trust the mask.
+        bx, by, bw, bh = stats[largest, :4]
+        touches = sum((bx <= mx + 2, by <= my + 2, bx + bw >= sw - mx - 2, by + bh >= sh - my - 2))
+        if touches >= 2:
+            reliable = False
     mask = cv2.resize(fg, (w, h), interpolation=cv2.INTER_NEAREST)
     if not reliable:
         mask = np.full((h, w), 255, np.uint8)

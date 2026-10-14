@@ -138,6 +138,12 @@ def lbp_similarity(a: np.ndarray, b: np.ndarray) -> float:
     return histogram_intersection(a, b, groups=len(LBP_SCALES))
 
 
+def is_achromatic(color_hist: np.ndarray, threshold: float = 0.9) -> bool:
+    """True if >= ``threshold`` of the H-S histogram mass has saturation < 32 (greyscale-like image)."""
+    h = color_hist.reshape(COLOR_BINS)
+    return float(h[:, 0].sum()) >= threshold
+
+
 def bhattacharyya_similarity(a: np.ndarray, b: np.ndarray) -> float:
     """1 - Bhattacharyya distance of two L1-normalised histograms; in [0, 1]."""
     bc = float(np.sqrt(np.clip(a, 0, None) * np.clip(b, 0, None)).sum())

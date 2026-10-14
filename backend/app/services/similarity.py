@@ -69,7 +69,9 @@ def global_evidence(q: FeatureSet, r: FeatureSet) -> dict[str, float | None]:
     return {
         "deep": deep,
         "texture": tf.lbp_similarity(q.lbp, r.lbp),
-        "color": tf.bhattacharyya_similarity(q.color, r.color),
+        # Colour is not evidence when either image is (near) greyscale: all such histograms look alike.
+        "color": None if (tf.is_achromatic(q.color) or tf.is_achromatic(r.color))
+        else tf.bhattacharyya_similarity(q.color, r.color),
         "shape": tf.shape_similarity(q.shape, r.shape),
     }
 
@@ -92,10 +94,10 @@ def pair_evidence(q: FeatureSet, r: FeatureSet, *, ratio: float = 0.75, reproj: 
 # Fusion configuration
 # ---------------------------------------------------------------------------
 
-DEFAULT_WEIGHTS = {"deep": 0.35, "geometric": 0.35, "texture": 0.15, "color": 0.15, "shape": 0.0}
+DEFAULT_WEIGHTS = {"deep": 0.35, "geometric": 0.45, "texture": 0.1, "color": 0.1, "shape": 0.0}
 DEFAULT_RANGES = {
     "deep": (0.5, 0.95),
-    "geometric": (8.0, 150.0),
+    "geometric": (8.0, 50.0),
     "texture": (0.80, 0.98),
     "color": (0.40, 0.90),
     "shape": (0.30, 0.95),

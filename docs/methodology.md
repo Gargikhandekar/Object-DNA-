@@ -18,8 +18,9 @@ Every image (reference, query, experiment) is processed identically:
 2. Resize so the longest side is 640 px (area interpolation).
 3. **Foreground mask** with GrabCut initialised from a centred rectangle (6 % border) on a 256 px copy, followed
    by morphological cleaning and largest-component selection. The mask is accepted as *reliable* only if the
-   component covers 5–92 % of the frame and holds ≥ 70 % of the foreground area; otherwise the whole image is
-   used. Optional cropping to the mask's bounding box is configurable (off by default).
+   component covers 5–92 % of the frame, holds ≥ 70 % of the foreground area, and does not run into the
+   initialisation rectangle on two or more sides (which indicates a frame-filling object); otherwise the whole
+   image is used. Optional cropping to the mask's bounding box is configurable (off by default).
 4. Grayscale + **CLAHE** (clip 2.0, 8×8 tiles) as input to ORB and LBP, reducing the influence of global
    illumination.
 5. Quality statistics (Laplacian variance, brightness, contrast) are stored and surfaced as warnings.
@@ -31,7 +32,7 @@ kept separate and aggregated at matching time.
 
 | Component | Descriptor | Size | Purpose |
 |---|---|---|---|
-| Local keypoints | ORB (FAST + rotated BRIEF), 1 500 keypoints, 8 pyramid levels, restricted to the reliable mask | N × 32 bytes + N × 6 floats | Distinctive local patches: scratches, print details, wear |
+| Local keypoints | ORB (FAST + rotated BRIEF), 1 500 keypoints, 8 pyramid levels, restricted to the reliable mask widened by 25 % of the image size (GrabCut tends to trim frame-filling objects) | N × 32 bytes + N × 6 floats | Distinctive local patches: scratches, print details, wear |
 | Texture | Rotation-invariant uniform LBP (riu2) at (P,R) = (8,1), (16,2), (24,3) with bilinear sampling; per-scale L1-normalised histograms | 10 + 18 + 26 = 54 | Surface micro-texture |
 | Gradients | Canny edge density, mean gradient magnitude, 16-bin unsigned orientation histogram | 18 | Auxiliary evidence, used to describe surface changes |
 | Colour | H × S histogram (18 × 8 bins) in HSV; V excluded for lighting robustness | 144 | Colour distribution |
@@ -56,7 +57,7 @@ For a query image *q* and a reference image *r* the following raw evidence is co
 | deep | cosine similarity of L2-normalised embeddings | [−1, 1] |
 | geometric | ORB matches surviving Lowe's ratio test (0.75) **in both directions** (mutual), then RANSAC: homography (reprojection threshold 6 px, plausibility checks on determinant and perspective terms), falling back to a 4-DoF partial affine model; a model supported by < 4 inliers counts as 0 | inlier count |
 | texture | mean per-scale LBP histogram intersection | [0, 1] |
-| color | 1 − Bhattacharyya distance of H-S histograms | [0, 1] |
+| color | 1 − Bhattacharyya distance of H-S histograms; *unavailable* if either image is near-greyscale (≥ 90 % of mass at saturation < 32) | [0, 1] |
 | shape | exp(−(mean \|Δlog-Hu\|/3 + 2·mean \|Δgeometry\|)) | (0, 1] |
 
 ### Normalisation and fusion
@@ -75,8 +76,9 @@ the score exactly, which makes the evidence breakdown in the UI additive and aud
 
 Two configurations exist:
 
-* **default-heuristic**: hand-set weights (deep 0.35, geometric 0.35, texture 0.15, colour 0.15, shape 0) and
-  ranges. It is documented as untuned.
+* **default-heuristic**: hand-set weights (deep 0.35, geometric 0.45, texture 0.10, colour 0.10, shape 0) and
+  ranges (geometric 8–50 inliers, chosen from real photographs where verified matches give tens of inliers).
+  It is documented as untuned; see `experiments/configs/default_fusion.json`.
 * **validation-tuned**: produced by the Research Lab. `lo_i` is the 5th percentile of *different-instance*
   validation pairs and `hi_i` the 95th percentile of *same-instance* validation pairs; the weights are a
   non-negative simplex grid search (step 0.1) that maximises validation ROC-AUC. It can be applied to the app

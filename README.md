@@ -72,11 +72,11 @@ object-dna/
 │   │   │                        texture_features.py, embedding_extractor.py, similarity.py,
 │   │   │                        identification.py, fingerprint_store.py, evaluation.py, image_validation.py
 │   │   └── research/            synthetic.py, dataset.py, experiments.py
-│   ├── tests/                   pytest suite (58 tests, no network needed)
+│   ├── tests/                   pytest suite (59 tests, no network needed)
 │   └── requirements.txt
 ├── frontend/                    React + Vite + TypeScript + Tailwind + Recharts + Lucide
-├── scripts/                     init_db, download_weights, import_dataset, generate_synthetic_dataset,
-│                                run_experiment, seed_demo
+├── scripts/                     init_db, download_weights, download_real_samples, import_dataset,
+│                                generate_synthetic_dataset, run_experiment, seed_demo
 ├── data/                        database, storage, datasets, model weights (git-ignored)
 ├── experiments/                 configs/ (active fusion), results/<run>/ (metrics, CSV, charts)
 └── docs/                        architecture.md, methodology.md, evaluation.md
@@ -142,9 +142,14 @@ npm run dev
 
 Open **http://localhost:5173**. The sidebar shows API connectivity and whether the deep encoder is available.
 
-Quick demo without a camera: `python scripts\seed_demo.py` generates the synthetic dataset and registers its
-reference images, so you can try *Identify* using images from
-`data\datasets\synthetic_demo\objects\<id>\query\`. Production build: `cd frontend && npm run build && npm run preview`.
+Quick demos without a camera:
+
+* **Real photos:** `python scripts\download_real_samples.py --register` downloads 5 real objects/scenes from
+  OpenCV's sample images and registers them. Then identify e.g.
+  `data\datasets\opencv_real\objects\box\query\s2__background__01.png` (the cookie box inside a cluttered
+  pile), or `objects\apple\query\...` (never registered, so it should be rejected).
+* **Synthetic:** `python scripts\seed_demo.py` generates the procedural dataset and registers its reference
+  images, so you can try *Identify* using images from `data\datasets\synthetic_demo\objects\<id>\query\`. Production build: `cd frontend && npm run build && npm run preview`.
 
 ## 5. Model weights
 
@@ -239,8 +244,9 @@ Each run evaluates `orb`, `texture`, `color`, `deep` (if weights are installed),
 
 ```powershell
 cd backend
-python -m pytest -q          # 58 tests: validation, features, persistence, fusion, rejection,
-                             # API (register/duplicates/identify/compare/delete cascade/history), metrics,
+python -m pytest -q          # 59 tests: validation, features, persistence, fusion, rejection,
+                             # API (register/duplicates/identify/compare/delete cascade/history),
+                             # embedding backfill, metrics,
                              # split integrity, end-to-end experiment run
 cd ..\frontend
 npm test                     # API client tests (vitest)
@@ -264,6 +270,9 @@ React 18.3.
 * **Same-model siblings are hard.** In the synthetic run, shared print designs produce many valid ORB inliers
   between *different* instances of the same model, so unregistered siblings are often marked UNCERTAIN or even
   accepted. This is the core difficulty of instance recognition and needs real data to quantify.
+* **Default thresholds are untuned.** They were chosen from a handful of real photos. Plain, low-texture
+  objects (e.g. a smooth single-colour bottle) give few keypoints and may stay UNCERTAIN until the deep model
+  is installed, more reference photos are added, and thresholds are tuned on your own data.
 * **Featureless, transparent, reflective or deformable objects** give few stable keypoints. Identification may be
   impossible from images alone.
 * GrabCut foreground masks fail on cluttered or low-contrast scenes; the system then falls back to the whole

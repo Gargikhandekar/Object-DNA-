@@ -47,47 +47,73 @@ learning is used yet; if it is added, its training identities must be disjoint f
 > Deep embeddings: **not evaluated**, because the pretrained weights could not be downloaded in the build
 > environment.
 
-Run `20261014-145104-ec3d44` (Research Lab, seed 42, validation fraction 0.4). Split: 10 validation / 15 test
-identities; gallery 60 images; 119 validation and 177 test queries (153 enrolled + 24 unknown); 4 queries
-excluded as near-duplicates of gallery images. Test pairs: 940 positive / 940 negative (470 same-model hard
-negatives).
+Run `20261014-161551-be53e1` (CLI, seed 42, validation fraction 0.4, pipeline `prep-v2`). Split: 10
+validation / 15 test identities; gallery 60 images; 119 validation and 177 test queries (153 enrolled + 24
+unknown); 4 queries excluded as near-duplicates of gallery images. Test pairs: 940 positive / 940 negative
+(470 same-model hard negatives).
 
 | Method | Top-1 | Top-5 | Acc. precision | Acc. recall | Unknown rejection | Open-set acc. | Ver. AUC | EER | FMR | FNMR |
 |---|---|---|---|---|---|---|---|---|---|---|
-| ORB + RANSAC | 1.000 | 1.000 | 0.908 | 0.843 | 0.458 | 0.791 | 0.909 | 0.173 | 0.145 | 0.210 |
-| LBP texture | 0.327 | 0.660 | 0.588 | 0.065 | 0.833 | 0.169 | 0.662 | 0.389 | 1.000 | 0.000 |
-| HSV colour | 0.542 | 0.987 | 0.503 | 0.497 | 0.167 | 0.452 | 0.761 | 0.327 | 0.535 | 0.023 |
-| Hybrid (default weights) | 0.869 | 1.000 | 0.756 | 0.869 | 0.042 | 0.757 | 0.884 | 0.200 | 0.372 | 0.045 |
-| Hybrid (validation-tuned) | 1.000 | 1.000 | 0.925 | 0.810 | 0.583 | 0.780 | 0.910 | 0.173 | 0.273 | 0.078 |
+| ORB + RANSAC | 0.993 | 1.000 | 0.910 | 0.856 | 0.458 | 0.802 | 0.906 | 0.182 | 0.224 | 0.146 |
+| LBP texture | 0.255 | 0.556 | 1.000 | 0.007 | 1.000 | 0.141 | 0.605 | 0.437 | 1.000 | 0.000 |
+| HSV colour | 0.503 | 0.987 | 0.507 | 0.464 | 0.167 | 0.424 | 0.742 | 0.343 | 0.545 | 0.028 |
+| Hybrid (default weights) | 0.523 | 1.000 | 0.452 | 0.523 | 0.000 | 0.452 | 0.817 | 0.258 | 0.449 | 0.017 |
+| Hybrid (validation-tuned) | 0.993 | 1.000 | 0.910 | 0.856 | 0.458 | 0.802 | 0.906 | 0.182 | 0.224 | 0.146 |
 | Deep embedding | unavailable | | | | | | | | | |
 
-Validation-tuned fusion weights: geometric 0.9, colour 0.1, texture 0.0 (validation ROC-AUC 0.921).
+Validation-tuned fusion: geometric weight 1.0 (all other components 0), geometric range 0–460 inliers
+(validation ROC-AUC 0.916). On this data the tuned hybrid is therefore identical to ORB alone.
 
 ### Observations (synthetic data only)
 
-* **Local geometric evidence dominates.** ORB + RANSAC ranks the true instance first for every enrolled test
-  query, across all synthetic conditions, including large viewpoint changes, occlusion and blur. The generator
-  renders flat printed surfaces, which suit a homography model better than real 3-D objects do.
-* **Unknown siblings are the failure mode.** Unregistered instances of an enrolled model share its print, so
-  they produce many correct but non-identifying inliers. ORB rejects only 46 % of them, and the tuned hybrid
-  58 %. This is the instance-vs-category problem the project targets. Separating siblings requires the
-  instance-specific marks to dominate the evidence, for example by down-weighting matches on shared design
-  regions.
-* **Global texture and colour descriptors do not identify instances.** LBP histograms are almost identical
-  across siblings (Top-1 0.33), and the validation-selected threshold collapses to "accept everything" in
-  verification (FMR 1.0). Colour separates models, not instances, and is lighting-sensitive.
-* **Validation tuning matters.** The hand-set default fusion accepted 96 % of unknown objects. Fitting the
-  ranges and weights on validation identities raised Top-1 from 0.87 to 1.00 and unknown rejection from
-  0.04 to 0.58.
-* **Latency.** Matching cost is dominated by ORB, at about 1.8 s CPU time per query against 60 references in
-  the parallel experiment harness. Global descriptors cost about 1–2 ms. The app parallelises reference
-  matching across threads.
+* **Local geometric evidence dominates.** ORB + RANSAC ranks the true instance first for 99 % of enrolled test
+  queries, across all synthetic conditions. The generator renders flat printed surfaces, which suit a homography
+  model better than real 3-D objects do.
+* **Unknown siblings are the failure mode.** Unregistered instances of an enrolled model share its print and
+  produce many correct but non-identifying inliers, so only 46 % are rejected. This is the instance-vs-category
+  problem the project targets.
+* **The default fusion is calibrated for real photos, not for this data.** Its geometric range (8–50 inliers,
+  see below) saturates on synthetic printed patterns, where even *different* same-model instances reach 50+
+  inliers. Siblings then tie, giving Top-1 0.52 and 0 % unknown rejection. Validation tuning stretches the
+  range to 0–460 and recovers ORB-level performance. **Always tune on data that resembles your deployment, then
+  press *Use in application*.**
+* **Global texture and colour descriptors do not identify instances.** LBP histograms are almost identical across
+  siblings, and colour separates models, not instances.
+* **Latency.** Matching cost is dominated by ORB, at about 1.8 s CPU time per query against 60 references (summed
+  per-thread CPU time). Global descriptors cost about 1–3 ms. The app parallelises reference matching.
 
-Charts (`roc_verification.png`, `robustness_top1.png`, `confusion.png`), CSV exports and the full
-`metrics.json` are produced in `experiments/results/<run>/` and in the Research Lab.
+History: an earlier run with pipeline `prep-v1` (default geometric range 8–150, tighter keypoint mask) gave
+hybrid-default Top-1 0.869 on this data. The defaults were changed after testing on real photographs (next
+section), where the old range under-scored real matches.
+
+## Real-photo demo (OpenCV sample images)
+
+`python scripts/download_real_samples.py --register` downloads 5 real objects/scenes from OpenCV's
+`samples/data`, each photographed twice (cookie box alone vs. in a cluttered pile, aloe plant stereo pair,
+rubber-whale and basketball video frames, graffiti panel at a large viewpoint change), plus 2 unregistered
+images (apple, orange). With the default fusion and no deep model:
+
+| Query | Status | Top candidate | Score | RANSAC inliers |
+|---|---|---|---|---|
+| Cookie box in cluttered scene | MATCH FOUND | cookie box ✔ | 0.604 | 39 |
+| Aloe (other stereo view) | MATCH FOUND | aloe ✔ | 1.000 | 216 |
+| Rubber whale (next frame) | MATCH FOUND | rubber whale ✔ | 1.000 | 902 |
+| Graffiti (large viewpoint change) | MATCH FOUND | graffiti ✔ | 0.802 | 39 |
+| Basketball (next frame) | MATCH FOUND | basketball ✔ | 1.000 | 661 |
+| Apple (never registered) | NO RELIABLE MATCH | orange | 0.159 | 0 |
+
+This is a **5-object smoke test, not a benchmark**. Two queries are consecutive video frames (flagged as
+near-duplicates by the import script), and none of the objects has a same-model sibling. It does show three
+issues found and fixed on real photos:
+
+1. GrabCut trimmed part of a frame-filling object, which cut the inliers from 40 to 10. The keypoint mask is now
+   widened by 25 % of the image size.
+2. Greyscale images produced identical colour histograms (a spurious "perfect" colour match). Colour evidence is
+   now marked unavailable when either image is near-greyscale.
+3. Real matches give tens of inliers rather than hundreds, so the default geometric range is now 8–50.
 
 ## Results on real data
 
-**Pending.** Collect the pilot dataset described in [data/README.md](../data/README.md), install the deep
+**Pending** (beyond the 5-object demo above). Collect the pilot dataset described in [data/README.md](../data/README.md), install the deep
 weights, and run `python scripts/run_experiment.py --dataset <name>`. Report public-benchmark results (if any
 are added) separately from custom-dataset results.
