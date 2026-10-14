@@ -114,6 +114,35 @@ issues found and fixed on real photos:
 
 ## Results on real data
 
+### Objectron subset (real phone videos, 9 categories)
+
+`python scripts/download_objectron.py` (seed 0, ≤ 200 MB): 16 physical objects from Google Objectron's test
+index, covering bike ×2, book, bottle ×3, camera, cereal box ×2, chair ×2, cup ×3, laptop and shoe. The 14
+registered objects have 3 reference frames each (0 %, 35 %, 70 % of the walk-around). Query frames are +5 %,
++12 % and +22 % of the clip after each reference. One unregistered bottle and one unregistered cup act as
+unknown objects. Negative pairs include different physical objects of the same category.
+
+Run `20261014-181236-f7449e` (default pipeline, no deep model): 7 validation / 9 test identities; gallery 42
+frames; 80 test queries (56 enrolled + 24 unknown); 13 queries excluded as near-duplicates of gallery frames.
+Test pairs: 182 positive / 182 negative (91 same-category).
+
+| Method | Top-1 | Top-5 | Acc. precision | Acc. recall | Unknown rejection | Open-set acc. | Ver. AUC | FMR | FNMR |
+|---|---|---|---|---|---|---|---|---|---|
+| ORB + RANSAC | 1.000 | 1.000 | 0.982 | 1.000 | 0.958 | 0.988 | 0.874 | 0.000 | 0.253 |
+| LBP texture | 0.607 | 0.911 | 0.436 | 0.607 | 0.083 | 0.450 | 0.746 | 0.467 | 0.236 |
+| HSV colour | 0.929 | 0.946 | 0.729 | 0.911 | 0.375 | 0.750 | 0.916 | 0.220 | 0.181 |
+| Hybrid (default) | 1.000 | 1.000 | 0.933 | 1.000 | 0.833 | 0.950 | 0.900 | 0.066 | 0.154 |
+| Hybrid (validation-tuned: geometric 0.9, colour 0.1) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.960 | 0.011 | 0.137 |
+| Deep embedding | unavailable | | | | | | | | |
+
+**Read with caution:** there are only 9 test
+identities and 80 queries, so a single error changes accuracy by 1–2 points. Each object comes from **one
+video**, so queries share lighting and background with their references and differ mainly in viewpoint.
+Verification is harder than identification here: FNMR 0.14–0.25 means many same-object pairs far apart in
+the walk-around fall below the threshold. In the app with **default** thresholds, a chair seen from a large
+viewpoint change ranked first but scored only 0.28 (NO RELIABLE MATCH). Applying the validation-tuned
+fusion fixes such cases on this data.
+
 ### COIL-100 (real objects, viewpoint changes)
 
 `python scripts/download_coil100.py` converts COIL-100 into the manifest format: 4 reference views per

@@ -76,7 +76,8 @@ object-dna/
 │   └── requirements.txt
 ├── frontend/                    React + Vite + TypeScript + Tailwind + Recharts + Lucide
 ├── scripts/                     init_db, download_weights, download_coil100, download_real_samples,
-│                                import_dataset, generate_synthetic_dataset, run_experiment, seed_demo,
+│                                download_objectron, import_dataset, generate_synthetic_dataset,
+│                                run_experiment, seed_demo,
 │                                reset_app_data
 ├── data/                        database, storage, datasets, model weights (git-ignored)
 ├── experiments/                 configs/ (active fusion), results/<run>/ (metrics, CSV, charts)
@@ -145,7 +146,14 @@ Open **http://localhost:5173**. The sidebar shows API connectivity and whether t
 
 Quick demos without a camera:
 
-* **Real object dataset (recommended):** `python scripts\download_coil100.py --register` downloads
+* **Real objects, real homes (recommended):** `python scripts\download_objectron.py --register` downloads
+  real phone videos from Google's [Objectron](https://github.com/google-research-datasets/Objectron) dataset
+  (C-UDA licence; cite Ahmadyan et al., CVPR 2021), picks the smallest ones so the download stays **under
+  200 MB**, extracts 12 frames per object and deletes the videos (≈22 MB kept). You get 16 physical objects from
+  all 9 categories (bike, book, bottle, camera, cereal box, chair, cup, laptop, shoe), with several *different*
+  bottles, cups, chairs, bikes and cereal boxes. Two objects are never registered. Options: `--max-mb`,
+  `--per-category`, `--categories`.
+* **COIL-100 turntable objects:** `python scripts\download_coil100.py --register` downloads
   [COIL-100](https://www.cs.columbia.edu/CAVE/software/softlib/coil-100.php) (≈130 MB, Columbia University,
   free for non-commercial research and education; cite Nene, Nayar & Murase, 1996): 100 real objects photographed every
   5° on a turntable. By default it uses 30 objects: 25 are registered with 4 views each (0°, 90°, 180°, 270°)
