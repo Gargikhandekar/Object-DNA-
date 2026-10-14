@@ -15,6 +15,10 @@ deep and hybrid approaches compare on labelled data with leakage-safe splits.
 > lighting. Scores are similarity scores, **not calibrated probabilities**. Any accuracy figure is valid only for
 > the dataset it was measured on.
 
+## Author
+
+Gargi Sanjay Khandekar (Reg. No. 235816456) - Pattern Recognition project.
+
 ---
 
 ## Contents
