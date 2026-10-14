@@ -114,6 +114,22 @@ issues found and fixed on real photos:
 
 ## Results on real data
 
+### COIL-100 (real objects, viewpoint changes)
+
+`python scripts/download_coil100.py` converts COIL-100 into the manifest format: 4 reference views per
+registered object, query views 10°/25°/45° from the nearest reference (conditions `viewpoint_small`,
+`viewpoint_moderate`, `viewpoint_large`), and the last N objects unregistered. Because every COIL object is
+its own product, single-instance models are pooled before the identity-disjoint split. Run
+`python scripts/run_experiment.py --dataset coil100` and paste the resulting table here. **Not yet measured:**
+the archive could not be downloaded from the build environment, so the converter was only tested on a mock
+archive with the same layout.
+
+Limitations to report with COIL-100 results: one capture session, fixed lighting, a black background, 128 px
+images, and almost no same-model siblings. It measures viewpoint robustness rather than distinguishing
+near-identical instances.
+
+### Your own pilot dataset
+
 **Pending** (beyond the 5-object demo above). Collect the pilot dataset described in [data/README.md](../data/README.md), install the deep
 weights, and run `python scripts/run_experiment.py --dataset <name>`. Report public-benchmark results (if any
 are added) separately from custom-dataset results.

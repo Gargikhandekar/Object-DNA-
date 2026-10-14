@@ -72,11 +72,12 @@ object-dna/
 │   │   │                        texture_features.py, embedding_extractor.py, similarity.py,
 │   │   │                        identification.py, fingerprint_store.py, evaluation.py, image_validation.py
 │   │   └── research/            synthetic.py, dataset.py, experiments.py
-│   ├── tests/                   pytest suite (59 tests, no network needed)
+│   ├── tests/                   pytest suite (60 tests, no network needed)
 │   └── requirements.txt
 ├── frontend/                    React + Vite + TypeScript + Tailwind + Recharts + Lucide
-├── scripts/                     init_db, download_weights, download_real_samples, import_dataset,
-│                                generate_synthetic_dataset, run_experiment, seed_demo
+├── scripts/                     init_db, download_weights, download_coil100, download_real_samples,
+│                                import_dataset, generate_synthetic_dataset, run_experiment, seed_demo,
+│                                reset_app_data
 ├── data/                        database, storage, datasets, model weights (git-ignored)
 ├── experiments/                 configs/ (active fusion), results/<run>/ (metrics, CSV, charts)
 └── docs/                        architecture.md, methodology.md, evaluation.md
@@ -144,7 +145,15 @@ Open **http://localhost:5173**. The sidebar shows API connectivity and whether t
 
 Quick demos without a camera:
 
-* **Real photos:** `python scripts\download_real_samples.py --register` downloads 5 real objects/scenes from
+* **Real object dataset (recommended):** `python scripts\download_coil100.py --register` downloads
+  [COIL-100](https://www.cs.columbia.edu/CAVE/software/softlib/coil-100.php) (≈130 MB, Columbia University,
+  free for non-commercial research and education; cite Nene, Nayar & Murase, 1996): 100 real objects photographed every
+  5° on a turntable. By default it uses 30 objects: 25 are registered with 4 views each (0°, 90°, 180°, 270°)
+  and 5 are never registered. Query views 10°, 25° and 45° away from the nearest reference are kept for
+  *Identify* and the Research Lab. Options: `--objects 60 --unregistered 10`. If the download is blocked,
+  download `coil-100.zip` in a browser and pass `--zip <path>`. To start with an empty Library first, run
+  `python scripts\reset_app_data.py` (with the backend stopped).
+* **Real photos (tiny):** `python scripts\download_real_samples.py --register` downloads 5 real objects/scenes from
   OpenCV's sample images and registers them. Then identify e.g.
   `data\datasets\opencv_real\objects\box\query\s2__background__01.png` (the cookie box inside a cluttered
   pile), or `objects\apple\query\...` (never registered, so it should be rejected).
@@ -244,7 +253,7 @@ Each run evaluates `orb`, `texture`, `color`, `deep` (if weights are installed),
 
 ```powershell
 cd backend
-python -m pytest -q          # 59 tests: validation, features, persistence, fusion, rejection,
+python -m pytest -q          # 60 tests: validation, features, persistence, fusion, rejection,
                              # API (register/duplicates/identify/compare/delete cascade/history),
                              # embedding backfill, metrics,
                              # split integrity, end-to-end experiment run

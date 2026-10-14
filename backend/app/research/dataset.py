@@ -231,14 +231,25 @@ def make_split(ds: Dataset, hashes: dict[int, int], val_fraction: float = 0.4, s
     by_model: dict[str, list[str]] = {}
     for o in objs:
         by_model.setdefault(by_obj[o][0].model, []).append(o)
+    # Models with several instances are split individually (siblings land in both splits); models with a
+    # single instance (e.g. COIL-100, where every object is a different product) are pooled and split together.
+    singletons: list[str] = []
     for model in sorted(by_model):
         group = sorted(by_model[model])
+        if len(group) == 1:
+            singletons += group
+            continue
         rng.shuffle(group)
-        k = int(round(len(group) * val_fraction))
-        if len(group) >= 2:
-            k = min(max(k, 1), len(group) - 1)
+        k = min(max(int(round(len(group) * val_fraction)), 1), len(group) - 1)
         val += group[:k]
         test += group[k:]
+    if singletons:
+        rng.shuffle(singletons)
+        k = int(round(len(singletons) * val_fraction))
+        if len(singletons) >= 2:
+            k = min(max(k, 1), len(singletons) - 1)
+        val += singletons[:k]
+        test += singletons[k:]
     notes = []
     if not val or not test:
         notes.append("Too few identities for an identity-disjoint split; validation and test share identities.")

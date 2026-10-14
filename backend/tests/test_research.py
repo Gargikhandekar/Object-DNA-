@@ -148,3 +148,24 @@ def test_experiment_runner_end_to_end(small_dataset, tmp_path):
               "tuned_fusion.json"):
         assert (out / f).exists(), f
     assert abs(sum(m["hybrid_tuning"]["weights"].values()) - 1.0) < 1e-6
+
+
+def test_split_handles_single_instance_models(tmp_path):
+    """Datasets like COIL-100 (one object per model) must still get an identity-disjoint split."""
+    from app.research.synthetic import write_manifest
+
+    rows = []
+    for k in range(10):
+        oid = f"coil_{k:03d}"
+        for role, sess, n in (("reference", "s1", 2), ("query", "s2", 2)):
+            for j in range(n):
+                rows.append({"object_id": oid, "image_path": f"objects/{oid}/{role}/{j}.png", "role": role,
+                             "session": sess, "condition": "viewpoint_moderate", "category": "c", "model": oid,
+                             "registered": str(k < 8).lower()})
+    write_manifest(tmp_path / "manifest.csv", rows)
+    ds = load_manifest(tmp_path)
+    hashes = {s.idx: s.idx * 0x9E3779B97F4A7C15 % (1 << 64) for s in ds.samples}  # all distinct
+    sp = make_split(ds, hashes, val_fraction=0.4, seed=0)
+    assert not sp.notes
+    assert set(sp.val_objects).isdisjoint(sp.test_objects)
+    assert len(sp.val_objects) == 4 and len(sp.test_objects) == 6
